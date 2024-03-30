@@ -1,12 +1,135 @@
 import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import rehypeRaw from "rehype-raw";
+import gfm from 'remark-gfm'; 
+
 import './App.css';
 import Toolbar from './components/toolbar';
 
-const MarkdownEditor = () => {
-  const initialMarkdown = `# Project Description\n\n## Overview\nThis Markdown Editor application allows users to write and preview Markdown content in real-time. It provides a user-friendly interface with a toolbar for formatting text, inserting images, and creating links.\n\n## Features\n- **Text Formatting:** Apply formatting styles such as bold, italic, code, and strikethrough to your text.\n- **Headings:** Easily create headings using Markdown syntax (e.g., # Heading 1, ## Heading 2, etc.).\n- **Lists:** Create bullet or numbered lists by starting lines with '-' or '1.' respectively.\n- **Insert Images:** Insert images into your Markdown content by providing the image URL.\n- **Create Links:** Create hyperlinks by entering the link text and URL.\n- **Real-Time Preview:** See the formatted preview of your Markdown content as you type.\n\n## Usage\n1. Start typing your Markdown content in the left text area.\n2. Use the toolbar buttons to apply formatting styles or insert images/links.\n3. View the real-time preview of your Markdown content in the right preview area.\n\nEnjoy writing Markdown effortlessly with Mark-Ease!`;
+const MARKDOWN_CONTENT = `
+# Welcome to Mark-Ease
 
-  const [content, setContent] = useState(initialMarkdown);
+This is a Markdown editor where you can **format text**, create [links](https://example.com), insert images, and more!
+
+## Text Formatting
+
+You can apply various formatting styles to your text, such as:
+
+- **Bold**
+- *Italic*
+- \`Code\`
+- ~~Strikethrough~~
+
+## Lists
+
+You can create both bulleted and numbered lists:
+
+- Bullet 1
+- Bullet 2
+  - Sub-bullet 1
+  - Sub-bullet 2
+1. Numbered item 1
+2. Numbered item 2
+
+## Code Blocks
+
+You can include code blocks with syntax highlighting:
+
+\`\`\`bash
+function greet(name) {
+  console.log(\`Hello, \${name}!\`);
+}
+
+greet('World');
+\`\`\`
+
+## Images
+
+You can insert images using Markdown syntax:
+
+<img src="https://random-image-pepebigotes.vercel.app/api/random-image"  width="300" height="300">
+
+
+## Links
+
+You can create hyperlinks easily:
+
+- [GitHub](https://github.com)
+- [React](https://reactjs.org)
+
+Enjoy writing Markdown with Mark-Ease!
+`;
+
+const components = {
+  code({ node, inline, className, ...props }) {
+    const match = /language-(\w+)/.exec(className || '');
+    return !inline && match ? (
+      <SyntaxHighlighter
+        style={atomOneDark}
+        language={match[1]}
+        PreTag="div"
+        wrapLines={true}
+        {...props}
+      >
+        {String(props.children).replace(/\n$/, '')}
+      </SyntaxHighlighter>
+    ) : (
+      <code className={className} {...props} />
+    );
+  },
+  ul({ node, ...props }) {
+    return <ul className="list-disc pl-5 mb-4 text-gray-800" {...props} />;
+  },
+  ol({ node, ...props }) {
+    return <ol className="list-decimal pl-5 mb-4 text-gray-800" {...props} />;
+  },
+  li({ node, ...props }) {
+    return <li className="mb-2" {...props} />;
+  },
+  h1({ node, ...props }) {
+    return (
+      <h1
+        className="text-4xl font-bold mb-4 text-gray-900 border-b-2 pb-2 border-gray-400"
+        {...props}
+      />
+    );
+  },
+  h2({ node, ...props }) {
+    return (
+      <h2
+        className="text-3xl font-bold mb-4 text-gray-900 border-b-2 pb-2 border-gray-400"
+        {...props}
+      />
+    );
+  },
+  h3({ node, ...props }) {
+    return (
+      <h3
+        className="text-2xl font-bold mb-4 text-gray-900 border-b-2 pb-2 border-gray-400"
+        {...props}
+      />
+    );
+  },
+  p({ node, ...props }) {
+    return <p className="mb-4 text-gray-800" {...props} />;
+  },
+  a({ node, ...props }) {
+    return <a className="text-blue-500 hover:underline" {...props} />;
+  },
+  blockquote({ node, ...props }) {
+    return (
+      <blockquote
+        className="text-black border-l-4 border-gray-400 pl-4 italic my-4"
+        {...props}
+      />
+    );
+  },
+};
+
+const MarkdownEditor = () => {
+  const [content, setContent] = useState(MARKDOWN_CONTENT);
   const textAreaRef = useRef(null);
 
   const handleChange = (e) => {
@@ -19,54 +142,38 @@ const MarkdownEditor = () => {
     const endPos = textArea.selectionEnd;
     const selectedText = textArea.value.substring(startPos, endPos);
     const formattedText = `${startTag}${selectedText}${endTag}`;
-    const newText = textArea.value.substring(0, startPos) + formattedText + textArea.value.substring(endPos);
+    const newText =
+      textArea.value.substring(0, startPos) +
+      formattedText +
+      textArea.value.substring(endPos);
     setContent(newText);
     textArea.focus();
-    textArea.setSelectionRange(startPos + startTag.length, startPos + startTag.length + selectedText.length);
+    textArea.setSelectionRange(
+      startPos + startTag.length,
+      startPos + startTag.length + selectedText.length
+    );
   };
 
-  const insertImage = () => {
-    const imageUrl = prompt('Enter image URL:');
-    if (imageUrl) {
-      const imageMarkdown = `![Image Alt Text](${imageUrl})`;
-      applyFormat(imageMarkdown, '');
-    }
-  };
-
-  const insertLink = () => {
-    const linkText = prompt('Enter link text:');
-    if (linkText) {
-      const linkUrl = prompt('Enter link URL:');
-      if (linkUrl) {
-        const linkMarkdown = `[${linkText}](${linkUrl})`;
-        applyFormat(linkMarkdown, '');
-      }
-    }
-  };
 
   return (
     <div className="flex h-screen">
       <div className="w-1/2 p-4 border-r">
-        <h1 className="text-3xl font-bold mb-4">Mark-Ease</h1>
-        <Toolbar
-          applyFormat={applyFormat}
-          insertImage={insertImage}
-          insertLink={insertLink}
-        />
-        <br/>
+        <h1 className="text-4xl font-bold mb-4 text-center">Mark-Ease</h1>
+        <Toolbar applyFormat={applyFormat}/>
+        <br />
         <textarea
           ref={textAreaRef}
           value={content}
           onChange={handleChange}
           rows={10}
-          className="w-full p-4 border rounded focus:outline-none focus:border-blue-500"
+          className="w-full p-4 border rounded h-5/6 focus:outline-none focus:border-blue-500 font-mono text-base"
           placeholder="Markdown here"
         />
       </div>
-      <div className="w-1/2 p-4">
+      <div className="w-1/2 p-4 bg-gray-100">
         <h2 className="text-lg font-bold mb-2 text-center">Preview</h2>
-        <div className="border p-4 max-h-96 overflow-y-auto">
-          <ReactMarkdown>{content}</ReactMarkdown>
+        <div className="border p-4 h-5/6 overflow-auto">
+          <ReactMarkdown components={components} remarkPlugins={[gfm]} rehypePlugins={[rehypeRaw]} children={content} />
         </div>
       </div>
     </div>
