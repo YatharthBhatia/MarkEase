@@ -28,7 +28,7 @@ const Toolbar = ({ applyFormat }) => {
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 p-2 bg-gray-200 rounded-md text-sm">
+    <div className="flex justify-evenly gap-2 p-2 bg-gray-200 rounded-md text-sm">
       <button
         className="btn bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
         onClick={() => applyFormat('**', '**')}
